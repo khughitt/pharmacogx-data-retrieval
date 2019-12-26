@@ -1,0 +1,9 @@
+conda-forge::python>=3.6
+conda-forge::r-base
+bioconductor-biobase
+bioconductor-genomeinfodbdata
+bioconductor-pharmacogx
+r-annotables
+r-tidyverse
+r-vim
+snakemake-minimal
