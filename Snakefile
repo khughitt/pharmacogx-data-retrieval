@@ -34,7 +34,17 @@ rule all:
                dataset=feature_datasets, feature_type=feature_types),
         expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather'), 
                zip,
-               dataset=pheno_datasets, phenotype=phenotypes)
+               dataset=pheno_datasets, phenotype=phenotypes),
+        expand(os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv'), 
+               dataset=pheno_datasets)
+
+rule load_cell_lines:
+    input:
+        expand(os.path.join(output_dir, '{{dataset}}/features/{feature_type}.feather'), 
+               feature_type=feature_types),
+    output:
+        os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
+    script: 'src/load_cell_lines.R'
 
 rule load_features:
     output:
