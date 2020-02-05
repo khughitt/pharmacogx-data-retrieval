@@ -36,7 +36,31 @@ rule all:
                zip,
                dataset=pheno_datasets, phenotype=phenotypes),
         expand(os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv'), 
-               dataset=pheno_datasets)
+               dataset=pheno_datasets),
+        expand(os.path.join(output_dir, '{dataset}/features/{feature_type}_cell_line_pca.png'),
+               zip,
+               dataset=feature_datasets, feature_type=feature_types),
+        expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_pca.png'),
+               zip,
+               dataset=pheno_datasets, phenotype=phenotypes)
+
+rule phenotype_eda:
+    input:
+        phenotypes=os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather'),
+        cell_lines=os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
+    output:
+        pca=os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_pca.png'),
+        tsne=os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_tsne.png')
+    script: 'src/phenotype_eda.R'
+
+rule feature_eda:
+    input:
+        features=os.path.join(output_dir, '{dataset}/features/{feature_type}.feather'),
+        cell_lines=os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
+    output:
+        pca=os.path.join(output_dir, '{dataset}/features/{feature_type}_cell_line_pca.png'),
+        tsne=os.path.join(output_dir, '{dataset}/features/{feature_type}_cell_line_tsne.png')
+    script: 'src/feature_eda.R'
 
 rule load_cell_lines:
     input:
