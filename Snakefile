@@ -5,8 +5,8 @@ V. Keith Hughitt
 import os
 
 # output directory
-output_dir = os.path.join(config['output_dir'], config['version'])
-report_dir = os.path.join(config['report_dir'], config['version'])
+output_dir = os.path.join(config['output_dir'], config['name'], config['version'])
+report_dir = os.path.join(config['report_dir'], config['name'], config['version'])
 
 # create directory to store environment states (debug-mode)
 if config['dev_mode']['enabled']:
@@ -29,20 +29,20 @@ for dataset_id in config['datasets']:
 
 rule all:
     input:
-        expand(os.path.join(output_dir, '{dataset}/features/{feature_type}.tsv.gz'), 
+        expand(os.path.join(output_dir, '{dataset}/features/{feature_type}.feather'), 
                zip,
                dataset=feature_datasets, feature_type=feature_types),
-        expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.tsv.gz'), 
+        expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather'), 
                zip,
                dataset=pheno_datasets, phenotype=phenotypes)
 
 rule load_features:
     output:
-        os.path.join(output_dir, '{dataset}/features/{feature_type}.tsv.gz')
+        os.path.join(output_dir, '{dataset}/features/{feature_type}.feather')
     script: 'src/load_features.R'
 
 rule load_phenotypes:
     output:
-        os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.tsv.gz')
+        os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather')
     script: 'src/load_phenotypes.R'
 

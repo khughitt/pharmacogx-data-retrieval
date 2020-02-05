@@ -3,6 +3,7 @@
 #
 suppressMessages(library(annotables))
 suppressMessages(library(Biobase))
+suppressMessages(library(feather))
 suppressMessages(library(PharmacoGx))
 suppressMessages(library(tidyverse))
 
@@ -41,6 +42,18 @@ if ('symbol' %in% colnames(fData(eset))) {
 }
 dat <- bind_cols(symbol = gene_symbols, as.data.frame(exprs(eset)))
 
+# if requested, limit data to specific cell lines
+if ("cell_lines" %in% names(dataset_cfg) && "filter" %in% names(dataset_cfg$cell_lines)) {
+  filter_cfg <- dataset_cfg$cell_lines$filter
+
+  # get a vector of cell line ids include
+  mask <- pset@cell[, filter_cfg$field] %in% filter_cfg$values
+  cells_to_include <- rownames(pset@cell)[mask]
+
+  # filter feature data
+  dat <- dat[, colnames(dat) %in% c('symbol', cells_to_include)]
+}
+
 # retrieve missing gene symbols from annotables
 if ('EnsemblGeneId' %in% colnames(fData(eset))) {
   # GDSC, GDSC1000 (GRCh37 / ensgene)
@@ -70,4 +83,4 @@ dat <- dat %>%
   group_by(symbol) %>%
   summarize_all(mean) %>%
   ungroup %>%
-  write_tsv(snakemake@output[[1]])
+  write_feather(snakemake@output[[1]])

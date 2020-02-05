@@ -4,6 +4,7 @@ bioconductor-biobase
 bioconductor-genomeinfodbdata
 bioconductor-pharmacogx
 r-annotables
+r-feather
 r-tidyverse
 r-vim
 snakemake-minimal

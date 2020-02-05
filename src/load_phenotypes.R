@@ -16,6 +16,7 @@ drug_config <- dataset_cfg$phenotypes[[phenotype]]
 #
 suppressMessages(library(annotables))
 suppressMessages(library(Biobase))
+suppressMessages(library(feather))
 suppressMessages(library(PharmacoGx))
 suppressMessages(library(VIM))
 suppressMessages(library(tidyverse))
@@ -40,6 +41,18 @@ if (!file.exists(pset_rda)) {
 
 # iterate over phenotype datasets and generate "clean" versions of each
 drug_dat <- summarizeSensitivityProfiles(pset, phenotype)
+
+# if requested, limit data to specific cell lines
+if ("cell_lines" %in% names(dataset_cfg) && "filter" %in% names(dataset_cfg$cell_lines)) {
+  filter_cfg <- dataset_cfg$cell_lines$filter
+
+  # get a vector of cell line ids include
+  mask <- pset@cell[, filter_cfg$field] %in% filter_cfg$values
+  cells_to_include <- rownames(pset@cell)[mask]
+
+  # filter feature data
+  drug_dat <- drug_dat[, colnames(drug_dat) %in% cells_to_include]
+}
 
 # clip extreme values
 if ('clip' %in% names(drug_config)) {
@@ -85,4 +98,4 @@ drug_dat_imputed <- t(drug_dat_imputed)
 drug_dat_imputed %>%
   as.data.frame() %>%
   rownames_to_column('drug') %>%
-  write_tsv(snakemake@output[[1]])
+  write_feather(snakemake@output[[1]])
