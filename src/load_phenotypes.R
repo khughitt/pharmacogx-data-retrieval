@@ -3,6 +3,13 @@
 #
 # chooses script to execute baed on the datasource type.
 #
+suppressMessages(library(annotables))
+suppressMessages(library(Biobase))
+suppressMessages(library(feather))
+suppressMessages(library(PharmacoGx))
+suppressMessages(library(VIM))
+suppressMessages(library(tidyverse))
+
 options(stringsAsFactors = FALSE)
 set.seed(1)
 
@@ -11,16 +18,11 @@ phenotype <- snakemake@wildcards$phenotype
 dataset_cfg <- snakemake@config$datasets[[snakemake@wildcards$dataset]]
 drug_config <- dataset_cfg$phenotypes[[phenotype]]
 
+dev_mode <- snakemake@config$dev_mode$enabled
+
 #
 # Generate clean version of PharmacoGx drug data
 #
-suppressMessages(library(annotables))
-suppressMessages(library(Biobase))
-suppressMessages(library(feather))
-suppressMessages(library(PharmacoGx))
-suppressMessages(library(VIM))
-suppressMessages(library(tidyverse))
-
 pset_id <- dataset_cfg$pset
 
 # check to make sure pset requested is a valid one
@@ -39,7 +41,7 @@ if (!file.exists(pset_rda)) {
   pset <- get(load(pset_rda))
 }
 
-# iterate over phenotype datasets and generate "clean" versions of each
+# extract drug screen data
 drug_dat <- summarizeSensitivityProfiles(pset, phenotype)
 
 # if requested, limit data to specific cell lines
@@ -50,9 +52,26 @@ if ("cell_lines" %in% names(dataset_cfg) && "filter" %in% names(dataset_cfg$cell
   mask <- pset@cell[, filter_cfg$field] %in% filter_cfg$values
   cells_to_include <- rownames(pset@cell)[mask]
 
+  if (dev_mode) {
+    message(sprintf("[INFO] Excluding %d / %d cell lines based on annotations",
+                    sum(!mask), length(mask)))
+  } 
+
   # filter feature data
   drug_dat <- drug_dat[, colnames(drug_dat) %in% cells_to_include]
 }
+
+# drop any cell lines with all missing values
+num_na <- apply(drug_dat, 2, function(x) {
+  sum(is.na(x))
+})
+mask <- num_na != nrow(drug_dat)
+
+if (dev_mode && sum(!mask) > 0) {
+  message(sprintf("[INFO] Dropping %d / %d cell lines with all missing values",
+                  sum(!mask), length(mask)))
+  drug_dat <- drug_dat[, mask]
+} 
 
 # clip extreme values
 if ('clip' %in% names(drug_config)) {
@@ -70,32 +89,48 @@ if (drug_config$log_transform) {
 
 # remove samples with too many missing values
 if ('filter' %in% names(drug_config)) {
+  # filter rows (drugs)
   row_num_na <- apply(drug_dat, 1, function(x) {
     sum(is.na(x))
   })
+  drug_data_row_max_na <- round((ncol(drug_dat) - 1) * drug_config$filter$row_max_na)
+  row_mask <- row_num_na <= drug_data_row_max_na
+
+  if (dev_mode && sum(!row_mask) > 0) {
+    message(sprintf("[INFO] Excluding %d / %d drugs with too many missing values",
+                    sum(!row_mask), length(row_mask)))
+    drug_dat <- drug_dat[row_mask, ]
+  } 
+
+  # filter columns (cell lines)
   col_num_na <- apply(drug_dat, 2, function(x) {
     sum(is.na(x))
   })
-
   drug_data_col_max_na <- round((nrow(drug_dat) - 1) * drug_config$filter$col_max_na)
-  drug_data_row_max_na <- round((ncol(drug_dat) - 1) * drug_config$filter$row_max_na)
+  col_mask <- col_num_na <= drug_data_col_max_na
 
-  # filter samples / drugs with too many missing values
-  drug_dat <- drug_dat[, col_num_na <= drug_data_col_max_na]
-  drug_dat <- drug_dat[row_num_na <= drug_data_row_max_na, ]
+  if (dev_mode && sum(!col_mask) > 0) {
+    message(sprintf("[INFO] Excluding %d / %d cell lines with too many missing values",
+                    sum(!col_mask), length(col_mask)))
+    drug_dat <- drug_dat[, col_mask]
+  } 
 }
 
-# impute remaining missing values
-drug_dat_imputed <- as.matrix(kNN(t(drug_dat), k = drug_config$impute$k)[, 1:nrow(drug_dat)])
-rownames(drug_dat_imputed) <- colnames(drug_dat)
+if (dev_mode && sum(is.na(drug_dat) > 0)) {
+  message(sprintf("[INFO] Imputing %d / %d remaining missing values",
+                  sum(is.na(drug_dat)), nrow(drug_dat) * ncol(drug_dat)))
 
-# drop any drugs with no variance
-drug_dat_imputed <- drug_dat_imputed[, apply(drug_dat_imputed, 2, var) != 0]
+  # impute remaining missing values
+  drug_dat_imputed <- as.matrix(kNN(t(drug_dat), k = drug_config$impute$k)[, 1:nrow(drug_dat)])
+  rownames(drug_dat_imputed) <- colnames(drug_dat)
 
-# transpose back to original orientation and store
-drug_dat_imputed <- t(drug_dat_imputed)
+  # drop any drugs with no variance
+  drug_dat_imputed <- drug_dat_imputed[, apply(drug_dat_imputed, 2, var) != 0]
 
-drug_dat_imputed %>%
-  as.data.frame() %>%
+  # transpose back to original orientation and store
+  drug_dat <- as.data.frame(t(drug_dat_imputed))
+} 
+
+drug_dat %>%
   rownames_to_column('drug') %>%
   write_feather(snakemake@output[[1]])
