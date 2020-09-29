@@ -21,10 +21,6 @@ drug_config <- dataset_cfg$phenotypes[[phenotype]]
 
 dev_mode <- snakemake@config$dev_mode$enabled
 
-# DEV
-save.image(sub('.feather', '.rda', snakemake@output[[1]]))
-print(paste0("Saving ", sub('.feather', '.rda', snakemake@output[[1]])))
-
 #
 # Generate clean version of PharmacoGx drug data
 #
@@ -38,12 +34,12 @@ if (!pset_id %in% supported_psets) {
 }
 
 # retrieve data from pharmacogx
-pset_rda <- file.path(snakemake@config$raw_dir, paste0(pset_id, '.rds'))
+pset_rds <- file.path(snakemake@config$raw_dir, paste0(pset_id, '.rds'))
 
-if (!file.exists(pset_rda)) {
+if (!file.exists(pset_rds)) {
   pset <- downloadPSet(pset_id, saveDir = snakemake@config$raw_dir)
 } else {
-  pset <- readRDS(pset_rda)
+  pset <- readRDS(pset_rds)
 }
 
 # extract drug screen data

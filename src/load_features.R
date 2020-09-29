@@ -30,10 +30,6 @@ if (!pset_id %in% supported_psets) {
 # download/load PSet
 pset_rds <- file.path(snakemake@config$raw_dir, paste0(pset_id, '.rds'))
 
-# DEV
-save.image(sub('.feather', '.rda', snakemake@output[[1]]))
-print(paste0("Saving ", sub('.feather', '.rda', snakemake@output[[1]])))
-
 if (!file.exists(pset_rds)) {
   pset <- downloadPSet(pset_id, saveDir = snakemake@config$raw_dir)
 } else {

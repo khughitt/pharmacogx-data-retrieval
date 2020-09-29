@@ -1,7 +1,7 @@
 #
 # Extracts cell line metadata for a PharmacoGx dataset
 #
-suppressMessages(library(feather))
+suppressMessages(library(arrow))
 suppressMessages(library(tidyverse))
 
 options(stringsAsFactors = FALSE)
@@ -18,9 +18,9 @@ dataset_cfg <- snakemake@config$datasets[[snakemake@wildcards$dataset]]
 
 # load pset
 pset_id <- dataset_cfg$pset
-pset_rda <- file.path(snakemake@config$raw_dir, paste0(pset_id, '.RData'))
+pset_rds <- file.path(snakemake@config$raw_dir, paste0(pset_id, '.rds'))
 
-pset <- get(load(pset_rda))
+pset <- readRDS(pset_rds)
 
 # get cell line metadata for selected cell lines and store result
 cell_mdata <- pset@cell[cell_ids, ]

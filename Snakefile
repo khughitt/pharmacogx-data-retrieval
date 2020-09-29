@@ -50,28 +50,9 @@ rule all_features:
                zip,
                dataset=feature_datasets, feature_type=feature_types)
 
-rule phenotype_eda:
-    input:
-        phenotypes=os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather'),
-        cell_lines=os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
-    output:
-        pca=os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_pca.png'),
-        tsne=os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_tsne.png')
-    script: 'src/phenotype_eda.R'
-
-rule feature_eda:
-    input:
-        features=os.path.join(output_dir, '{dataset}/features/{feature_type}.feather'),
-        cell_lines=os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
-    output:
-        pca=os.path.join(output_dir, '{dataset}/features/{feature_type}_cell_line_pca.png'),
-        tsne=os.path.join(output_dir, '{dataset}/features/{feature_type}_cell_line_tsne.png')
-    script: 'src/feature_eda.R'
-
 rule load_cell_lines:
     input:
-        expand(os.path.join(output_dir, '{{dataset}}/features/{feature_type}.feather'), 
-               feature_type=feature_types),
+        os.path.join(output_dir, '{dataset}/features/rna.feather'), 
     output:
         os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
     script: 'src/load_cell_lines.R'
