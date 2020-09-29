@@ -36,13 +36,7 @@ rule all:
                zip,
                dataset=pheno_datasets, phenotype=phenotypes),
         expand(os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv'), 
-               dataset=pheno_datasets),
-        expand(os.path.join(output_dir, '{dataset}/features/{feature_type}_cell_line_pca.png'),
-               zip,
-               dataset=feature_datasets, feature_type=feature_types),
-        expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_pca.png'),
-               zip,
-               dataset=pheno_datasets, phenotype=phenotypes)
+               dataset=pheno_datasets)
 
 rule all_features:
     input:
