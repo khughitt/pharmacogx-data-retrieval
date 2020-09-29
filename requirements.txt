@@ -4,7 +4,7 @@ bioconductor-biobase
 bioconductor-genomeinfodbdata
 bioconductor-pharmacogx
 r-annotables
-r-feather
+r-arrow
 r-rtsne
 r-tidyverse
 r-vim

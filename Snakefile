@@ -10,7 +10,7 @@ report_dir = os.path.join(config['report_dir'], config['name'], config['version'
 
 # create directory to store environment states (debug-mode)
 if config['dev_mode']['enabled']:
-    os.makedirs(config['dev_mode']['rda_dir'], mode = 755, exist_ok=True)
+    os.makedirs(config['dev_mode']['rda_dir'], mode=755, exist_ok=True)
 
 # Generate lists of output filepath components
 feature_datasets = []
@@ -43,6 +43,12 @@ rule all:
         expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_cell_line_pca.png'),
                zip,
                dataset=pheno_datasets, phenotype=phenotypes)
+
+rule all_features:
+    input:
+        expand(os.path.join(output_dir, '{dataset}/features/{feature_type}.feather'), 
+               zip,
+               dataset=feature_datasets, feature_type=feature_types)
 
 rule phenotype_eda:
     input:

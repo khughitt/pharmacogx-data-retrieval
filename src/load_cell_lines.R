@@ -18,7 +18,7 @@ dataset_cfg <- snakemake@config$datasets[[snakemake@wildcards$dataset]]
 
 # load pset
 pset_id <- dataset_cfg$pset
-pset_rda <- file.path(snakemake@config$data_dir, paste0(pset_id, '.RData'))
+pset_rda <- file.path(snakemake@config$raw_dir, paste0(pset_id, '.RData'))
 
 pset <- get(load(pset_rda))
 
