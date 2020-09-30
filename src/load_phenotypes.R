@@ -19,8 +19,6 @@ phenotype <- snakemake@wildcards$phenotype
 dataset_cfg <- snakemake@config$datasets[[snakemake@wildcards$dataset]]
 drug_config <- dataset_cfg$phenotypes[[phenotype]]
 
-dev_mode <- snakemake@config$dev_mode$enabled
-
 #
 # Generate clean version of PharmacoGx drug data
 #
@@ -44,23 +42,6 @@ if (!file.exists(pset_rds)) {
 
 # extract drug screen data
 drug_dat <- summarizeSensitivityProfiles(pset, phenotype)
-
-# if requested, limit data to specific cell lines
-# if ("cell_lines" %in% names(dataset_cfg) && "filter" %in% names(dataset_cfg$cell_lines)) {
-#   filter_cfg <- dataset_cfg$cell_lines$filter
-#
-#   # get a vector of cell line ids include
-#   mask <- pset@cell[, filter_cfg$field] %in% filter_cfg$values
-#   cells_to_include <- rownames(pset@cell)[mask]
-#
-#   if (dev_mode) {
-#     message(sprintf("[INFO] Excluding %d / %d cell lines based on annotations",
-#                     sum(!mask), length(mask)))
-#   }
-#
-#   # filter feature data
-#   drug_dat <- drug_dat[, colnames(drug_dat) %in% cells_to_include]
-# }
 
 # drop any cell lines with all missing values
 num_na <- apply(drug_dat, 2, function(x) {
@@ -98,7 +79,7 @@ if ('filter' %in% names(drug_config)) {
   row_mask <- row_num_na <= drug_data_row_max_na
 
   if (sum(!row_mask) > 0) {
-    message(sprintf("[INFO] Excluding %d / %d drugs with too many missing values",
+    message(sprintf("[INFO] Dropping %d / %d drugs with too many missing values",
                     sum(!row_mask), length(row_mask)))
     drug_dat <- drug_dat[row_mask, ]
   } 
@@ -111,7 +92,7 @@ if ('filter' %in% names(drug_config)) {
   col_mask <- col_num_na <= drug_data_col_max_na
 
   if (sum(!col_mask) > 0) {
-    message(sprintf("[INFO] Excluding %d / %d cell lines with too many missing values",
+    message(sprintf("[INFO] Dropping %d / %d cell lines with too many missing values",
                     sum(!col_mask), length(col_mask)))
     drug_dat <- drug_dat[, col_mask]
   } 
@@ -132,6 +113,46 @@ if (sum(is.na(drug_dat) > 0)) {
   drug_dat <- as.data.frame(t(drug_dat_imputed))
 } 
 
+# save drug data
 drug_dat %>%
   rownames_to_column('drug') %>%
   write_feather(snakemake@output[[1]])
+
+# save row metadata (drugs)
+drug_ids <- rownames(drug_dat)
+
+drug_mdata <- pset@drug[drug_ids, ] %>%
+  select(-drugid) %>%
+  rownames_to_column('drug_id')
+
+# fix colnames
+if (snakemake@wildcards$dataset %in% c('gcsi2017', 'gray2017')) {
+  # gCSI, GRAY
+  colnames(drug_mdata) <- c("drug_id", "smiles", "inchikey", "cid", "fda_approved")
+} else if (snakemake@wildcards$dataset == 'gdsc2020') {
+  drug_mdata <- drug_mdata %>%
+    select(-DRUG_ID)
+
+  colnames(drug_mdata) <- c("drug_id", "screening_site", "drug_name", "synonyms",
+                            "target", "target_pathway", "smiles", "inchikey", "cid",
+                            "fda_approved")
+  
+} else {
+  # CCLE
+  colnames(drug_mdata) <- c("drug_id", "compound_code_or_generic_name",
+                            "compound_brand_name", "targets", "moa", "class",
+                            "highest_phase", "organization", "compound",
+                            "drug_name", "smiles", "inchikey", "cid", "fda_approved")
+}
+
+drug_mdata %>%
+  write_feather(snakemake@output[[2]])
+
+# save column metadata (cell lines)
+cell_ids <- colnames(drug_dat)[-1]
+cell_mdata <- pset@cell[cell_ids, ]
+
+cell_mdata <- cell_mdata %>%
+  rownames_to_column('cell_line') %>%
+  write_feather(snakemake@output[[3]])
+

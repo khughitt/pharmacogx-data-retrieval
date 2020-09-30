@@ -8,10 +8,6 @@ import os
 output_dir = os.path.join(config['output_dir'], config['name'], config['version'])
 report_dir = os.path.join(config['report_dir'], config['name'], config['version'])
 
-# create directory to store environment states (debug-mode)
-if config['dev_mode']['enabled']:
-    os.makedirs(config['dev_mode']['rda_dir'], mode=755, exist_ok=True)
-
 # Generate lists of output filepath components
 feature_datasets = []
 pheno_datasets   = []
@@ -32,11 +28,18 @@ rule all:
         expand(os.path.join(output_dir, '{dataset}/features/{feature_type}.feather'), 
                zip,
                dataset=feature_datasets, feature_type=feature_types),
+        expand(os.path.join(output_dir, '{dataset}/features/{feature_type}_col_mdata.feather'), 
+               zip,
+               dataset=feature_datasets, feature_type=feature_types),
         expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather'), 
                zip,
                dataset=pheno_datasets, phenotype=phenotypes),
-        expand(os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv'), 
-               dataset=pheno_datasets)
+        expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_row_mdata.feather'), 
+               zip,
+               dataset=pheno_datasets, phenotype=phenotypes),
+        expand(os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_col_mdata.feather'), 
+               zip,
+               dataset=pheno_datasets, phenotype=phenotypes)
 
 rule all_features:
     input:
@@ -44,20 +47,16 @@ rule all_features:
                zip,
                dataset=feature_datasets, feature_type=feature_types)
 
-rule load_cell_lines:
-    input:
-        os.path.join(output_dir, '{dataset}/features/rna.feather'), 
-    output:
-        os.path.join(output_dir, '{dataset}/metadata/cell_lines.tsv')
-    script: 'src/load_cell_lines.R'
-
 rule load_features:
     output:
-        os.path.join(output_dir, '{dataset}/features/{feature_type}.feather')
+        os.path.join(output_dir, '{dataset}/features/{feature_type}.feather'),
+        os.path.join(output_dir, '{dataset}/features/{feature_type}_col_mdata.feather')
     script: 'src/load_features.R'
 
 rule load_phenotypes:
     output:
-        os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather')
+        os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}.feather'),
+        os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_row_mdata.feather'),
+        os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_col_mdata.feather')
     script: 'src/load_phenotypes.R'
 
