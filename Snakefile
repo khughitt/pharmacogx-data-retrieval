@@ -5,8 +5,8 @@ V. Keith Hughitt
 import os
 
 # output directory
-output_dir = os.path.join(config['output_dir'], config['name'], config['version'])
-report_dir = os.path.join(config['report_dir'], config['name'], config['version'])
+output_dir = os.path.join(config['output_dir'], config['version'])
+report_dir = os.path.join(config['report_dir'], config['version'])
 
 # Generate lists of output filepath components
 feature_datasets = []

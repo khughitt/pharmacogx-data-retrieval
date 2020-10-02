@@ -21,7 +21,7 @@ feat_cfg <- cfg$features[[snakemake@wildcards$feature_type]]
 mdatatype <- feat_cfg$mdatatype
 
 # check to make sure pset requested is a valid one
-supported_psets <- c('GDSC_2020(v2-8.2)', 'CCLE_2015', 'GRAY_2017', 'gCSI_2017')
+supported_psets <- c('GDSC_2020(v2-8.2)', 'CCLE_2015', 'GRAY_2017', 'gCSI_2017', 'UHNBreast_2019')
 
 if (!pset_id %in% supported_psets) {
   stop(sprintf("Unsupported Pharmacoset specified: %s!", pset_id))
@@ -42,7 +42,7 @@ if ("summary_stat" %in% names(feat_cfg)) {
 } else if (mdatatype %in% c("mutation", "fusion")) {
   summary_stat <- "or"
 } else {
-  summary_stat <- "mean"
+  summary_stat <- "median"
 }
 
 # extract features as a SummarizedExperiment

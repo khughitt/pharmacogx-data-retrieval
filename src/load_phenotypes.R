@@ -25,7 +25,7 @@ drug_config <- dataset_cfg$phenotypes[[phenotype]]
 pset_id <- dataset_cfg$pset
 
 # check to make sure pset requested is a valid one
-supported_psets <- c('GDSC_2020(v2-8.2)', 'CCLE_2015', 'GRAY_2017', 'gCSI_2017')
+supported_psets <- c('GDSC_2020(v2-8.2)', 'CCLE_2015', 'GRAY_2017', 'gCSI_2017', 'UHNBreast_2019')
 
 if (!pset_id %in% supported_psets) {
   stop(sprintf("Unsupported Pharmacoset specified: %s!", pset_id))
@@ -53,7 +53,7 @@ if (sum(!mask) > 0) {
   message(sprintf("[INFO] Dropping %d / %d cell lines with all missing values",
                   sum(!mask), length(mask)))
   drug_dat <- drug_dat[, mask]
-} 
+}
 
 # clip extreme values
 if ('clip' %in% names(drug_config)) {
@@ -82,7 +82,7 @@ if ('filter' %in% names(drug_config)) {
     message(sprintf("[INFO] Dropping %d / %d drugs with too many missing values",
                     sum(!row_mask), length(row_mask)))
     drug_dat <- drug_dat[row_mask, ]
-  } 
+  }
 
   # filter columns (cell lines)
   col_num_na <- apply(drug_dat, 2, function(x) {
@@ -95,7 +95,7 @@ if ('filter' %in% names(drug_config)) {
     message(sprintf("[INFO] Dropping %d / %d cell lines with too many missing values",
                     sum(!col_mask), length(col_mask)))
     drug_dat <- drug_dat[, col_mask]
-  } 
+  }
 }
 
 if (sum(is.na(drug_dat) > 0)) {
@@ -111,7 +111,7 @@ if (sum(is.na(drug_dat) > 0)) {
 
   # transpose back to original orientation and store
   drug_dat <- as.data.frame(t(drug_dat_imputed))
-} 
+}
 
 # save drug data
 drug_dat %>%
@@ -136,7 +136,7 @@ if (snakemake@wildcards$dataset %in% c('gcsi2017', 'gray2017')) {
   colnames(drug_mdata) <- c("drug_id", "screening_site", "drug_name", "synonyms",
                             "target", "target_pathway", "smiles", "inchikey", "cid",
                             "fda_approved")
-  
+
 } else {
   # CCLE
   colnames(drug_mdata) <- c("drug_id", "compound_code_or_generic_name",
