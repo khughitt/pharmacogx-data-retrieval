@@ -55,6 +55,8 @@ if (sum(!mask) > 0) {
   drug_dat <- drug_dat[, mask]
 }
 
+save.image('~/tmp.rda')
+
 # clip extreme values
 if ('clip' %in% names(drug_config)) {
   clip_lower <- as.numeric(drug_config$clip$min_val)
@@ -126,8 +128,8 @@ drug_mdata <- pset@drug[drug_ids, ] %>%
   rownames_to_column('drug_id')
 
 # fix colnames
-if (snakemake@wildcards$dataset %in% c('gcsi2017', 'gray2017')) {
-  # gCSI, GRAY
+if (snakemake@wildcards$dataset %in% c('gcsi2017', 'gray2017', 'uhnbreast2019')) {
+  # gCSI, GRAY, UHNBreast
   colnames(drug_mdata) <- c("drug_id", "smiles", "inchikey", "cid", "fda_approved")
 } else if (snakemake@wildcards$dataset == 'gdsc2020') {
   drug_mdata <- drug_mdata %>%
