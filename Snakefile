@@ -60,3 +60,12 @@ rule load_phenotypes:
         os.path.join(output_dir, '{dataset}/phenotypes/{phenotype}_col_mdata.feather')
     script: 'src/load_phenotypes.R'
 
+rule download_metadata:
+    output:
+        os.path.join(config['raw_dir'], 'cell_annotation_table.csv'),
+        os.path.join(config['raw_dir'], 'drug_annotation_table.csv')
+    shell:
+        """
+        curl https://pharmacodb.pmgenomics.ca/download?cell_annotation=y -o {output[0]}
+        curl https://pharmacodb.pmgenomics.ca/download?drug_annotation=y -o {output[1]}
+        """
